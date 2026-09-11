@@ -502,6 +502,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
+    // Construir opciones de producto a partir de variantes
     function buildProductOptionsFromVariants(variants) {
 
         const colorsMap = new Map();
@@ -540,7 +541,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     id: talle.id,
                     name: talle.nombre,
                     variantId: variant.id,
-                    stock: variant.stock
+                    stock: Number(variant.stock) || 0,
+                    available:
+                    Number(variant.stock) > 0
                 });
 
             }
@@ -550,10 +553,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         return Array.from(colorsMap.values());
 
     }
-
-
-
-
 
 
     /*
@@ -1310,109 +1309,105 @@ document.addEventListener("DOMContentLoaded", async () => {
      * =====================================================
      */
 
+
     function renderColorOptions() {
 
         elements.colorOptions.innerHTML = "";
 
+        if (!selectedProduct) {
+            elements.colorSection.style.display = "none";
+            return;
+        }
 
-        if (
-            !selectedProduct ||
-            !Array.isArray(
-                selectedProduct.colors
-            ) ||
-            selectedProduct.colors.length === 0
-        ) {
+        const colors =
+            Array.isArray(selectedProduct.apiOptions) &&
+            selectedProduct.apiOptions.length > 0
+                ? selectedProduct.apiOptions
+                : selectedProduct.colors || [];
+
+        if (!colors.length) {
 
             elements.colorSection.style.display =
                 "none";
 
             return;
-
         }
-
 
         elements.colorSection.style.display =
             "block";
 
+        colors.forEach(color => {
 
-        selectedProduct.colors.forEach(
-            color => {
+            const button =
+                document.createElement("button");
 
-                const button =
-                    document.createElement(
-                        "button"
-                    );
+            button.type =
+                "button";
 
+            button.className =
+                "color-option";
 
-                button.type =
-                    "button";
+            const colorAvailable =
+                color.available !== false &&
+                (
+                    !Array.isArray(color.sizes) ||
+                    color.sizes.some(
+                        size => size.available !== false
+                    )
+                );
 
+            if (!colorAvailable) {
 
-                button.className =
-                    "color-option";
-
-
-                if (
-                    color.available === false
-                ) {
-
-                    button.classList.add(
-                        "disabled"
-                    );
-
-                }
-
-
-                button.innerHTML = `
-                    <span
-                        style="background:${escapeAttribute(color.hex || "#ccc")}"
-                    ></span>
-                `;
-
-
-                button.title =
-                    color.available === false
-                        ? `${color.name} - Agotado`
-                        : color.name;
-
-
-                if (
-                    selectedColor?.name ===
-                    color.name
-                ) {
-
-                    button.classList.add(
-                        "selected"
-                    );
-
-                }
-
-
-                if (
-                    color.available !== false
-                ) {
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-
-                            selectColor(
-                                color.name
-                            );
-
-                        }
-                    );
-
-                }
-
-
-                elements.colorOptions.appendChild(
-                    button
+                button.classList.add(
+                    "disabled"
                 );
 
             }
-        );
 
+            button.innerHTML = `
+                <span
+                    style="background:${escapeAttribute(
+                        color.hex || "#ccc"
+                    )}"
+                ></span>
+            `;
+
+            button.title =
+                colorAvailable
+                    ? color.name
+                    : `${color.name} - Agotado`;
+
+            if (
+                selectedColor?.name ===
+                color.name
+            ) {
+
+                button.classList.add(
+                    "selected"
+                );
+
+            }
+
+            if (colorAvailable) {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        selectColor(
+                            color.name
+                        );
+
+                    }
+                );
+
+            }
+
+            elements.colorOptions.appendChild(
+                button
+            );
+
+        });
 
         elements.selectedColorName.textContent =
             selectedColor?.name || "";
@@ -1420,48 +1415,77 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
+
+
+    /**
+     * =====================================================
+     * COLORES
+     * =====================================================
+     */
     function selectColor(colorName) {
 
         if (!selectedProduct) {
-
             return;
-
         }
 
+        const colors =
+            Array.isArray(selectedProduct.apiOptions) &&
+            selectedProduct.apiOptions.length > 0
+                ? selectedProduct.apiOptions
+                : selectedProduct.colors || [];
 
         const color =
-            selectedProduct.colors.find(
+            colors.find(
                 item =>
                     item.name === colorName
             );
 
-
-        if (
-            !color ||
-            color.available === false
-        ) {
-
+        if (!color) {
             return;
-
         }
 
+        if (
+            color.available === false
+        ) {
+            return;
+        }
+
+        if (
+            Array.isArray(color.sizes) &&
+            !color.sizes.some(
+                size => size.available !== false
+            )
+        ) {
+            return;
+        }
 
         selectedColor =
             color;
 
-
         selectedSize =
             null;
 
+        selectedVariant =
+            null;
 
-        changeModalImage(
-            color.image
-        );
+    /*
+     * Si estamos utilizando los datos
+     * reales de la API, el color no
+     * necesariamente tiene imagen.
+     *
+     * Por eso solamente cambiamos
+     * la imagen si existe.
+     */
+        if (color.image) {
 
+            changeModalImage(
+                color.image
+            );
+
+        }
 
         elements.selectedColorName.textContent =
             color.name;
-
 
         renderColorOptions();
 
@@ -1478,25 +1502,21 @@ document.addEventListener("DOMContentLoaded", async () => {
      * =====================================================
      */
 
+    
     function renderSizeOptions() {
 
         elements.sizeOptions.innerHTML = "";
 
-
         if (!selectedProduct) {
-
             return;
-
         }
 
-
         let sizes = [];
-
 
         if (selectedColor) {
 
             sizes =
-                selectedColor.sizes || [];
+            selectedColor.sizes || [];
 
         } else if (
             Array.isArray(
@@ -1509,25 +1529,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
-
         if (!sizes.length) {
 
             elements.sizeSection.style.display =
                 "none";
 
-
             elements.selectedSizeName.textContent =
                 "";
 
-
             return;
-
         }
-
 
         elements.sizeSection.style.display =
             "block";
-
 
         sizes.forEach(size => {
 
@@ -1536,29 +1550,32 @@ document.addEventListener("DOMContentLoaded", async () => {
                     "button"
                 );
 
-
             button.type =
                 "button";
-
 
             button.className =
                 "size-option";
 
-
             button.textContent =
                 size.name;
 
+            const available =
+                size.available !== false &&
+                (
+                    size.stock === undefined ||
+                    Number(size.stock) > 0
+                );
 
-            if (
-                size.available === false
-            ) {
+            if (!available) {
 
                 button.classList.add(
                     "disabled"
                 );
 
-            }
+                button.title =
+                    "Sin stock";
 
+            }
 
             if (
                 selectedSize?.name ===
@@ -1571,10 +1588,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             }
 
-
-            if (
-                size.available !== false
-            ) {
+            if (available) {
 
                 button.addEventListener(
                     "click",
@@ -1586,9 +1600,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     }
                 );
-
+            
             }
-
 
             elements.sizeOptions.appendChild(
                 button
@@ -1596,24 +1609,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         });
 
-
         elements.selectedSizeName.textContent =
             selectedSize?.name || "";
 
     }
 
-
+    // JavaScript function for selecting a size
     function selectSize(sizeName) {
 
         if (!selectedProduct) {
-
             return;
-
         }
 
-
         let sizes = [];
-
 
         if (selectedColor) {
 
@@ -1627,37 +1635,60 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
-
         const size =
             sizes.find(
                 item =>
                     item.name === sizeName
             );
 
-
-        if (
-            !size ||
-            size.available === false
-        ) {
-
+        if (!size) {
             return;
-
         }
 
+        if (
+            size.available === false
+        ) {
+            return;
+        }
+
+        if (
+            size.stock !== undefined &&
+            Number(size.stock) <= 0
+        ) {
+            return;
+        }
 
         selectedSize =
             size;
 
+        /*
+        * La variante real viene
+        * directamente desde la API.
+        */
+        if (size.variantId) {
+
+            selectedVariant =
+                productVariants.find(
+                    variant =>
+                        Number(variant.id) ===
+                        Number(size.variantId)
+                ) || null;
+
+        } else {
+
+            selectedVariant =
+                null;
+
+        }
 
         elements.selectedSizeName.textContent =
             size.name;
-
 
         renderSizeOptions();
 
         updateAddButtonState();
 
-    }
+        }
 
 
     /*
@@ -1666,6 +1697,7 @@ document.addEventListener("DOMContentLoaded", async () => {
      * =====================================================
      */
 
+
     function updateAddButtonState() {
 
         if (!selectedProduct) {
@@ -1673,11 +1705,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             elements.addToCartButton.disabled =
                 true;
 
-
             return;
-
         }
-
 
         if (
             selectedProduct.available === false
@@ -1686,22 +1715,95 @@ document.addEventListener("DOMContentLoaded", async () => {
             elements.addToCartButton.disabled =
                 true;
 
-
             elements.modalStockMessage.textContent =
                 "Este producto está agotado.";
 
-
             return;
-
         }
 
+        const usesAPI =
+            Array.isArray(
+                selectedProduct.apiOptions
+            ) &&
+            selectedProduct.apiOptions.length > 0;
+
+        /*
+            * =====================================================
+            * PRODUCTO CON VARIANTES REALES
+            * =====================================================
+            */
+
+        if (usesAPI) {
+
+            if (!selectedColor) {
+
+                elements.addToCartButton.disabled =
+                    true;
+
+                elements.modalStockMessage.textContent =
+                    "Seleccioná un color.";
+
+                return;
+            }
+
+            if (!selectedSize) {
+
+                elements.addToCartButton.disabled =
+                    true;
+
+                elements.modalStockMessage.textContent =
+                    "Seleccioná un talle.";
+
+                return;
+            }
+
+            if (!selectedVariant) {
+
+                elements.addToCartButton.disabled =
+                    true;
+
+                elements.modalStockMessage.textContent =
+                    "La combinación seleccionada no está disponible.";
+
+                return;
+            }
+
+            const stock =
+                Number(
+                    selectedVariant.stock
+                ) || 0;
+
+            if (stock <= 0) {
+
+                elements.addToCartButton.disabled =
+                    true;
+
+                elements.modalStockMessage.textContent =
+                    "Sin stock.";
+
+                return;
+            }
+
+            elements.modalStockMessage.textContent =
+                `Stock disponible: ${stock}`;
+
+            elements.addToCartButton.disabled =
+                false;
+
+            return;
+        }
+
+        /*
+            * =====================================================
+            * COMPATIBILIDAD CON PRODUCTOS ANTIGUOS
+            * =====================================================
+            */
 
         const requiresColor =
             Array.isArray(
                 selectedProduct.colors
             ) &&
             selectedProduct.colors.length > 0;
-
 
         if (
             requiresColor &&
@@ -1711,28 +1813,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             elements.addToCartButton.disabled =
                 true;
 
-
             elements.modalStockMessage.textContent =
                 "Seleccioná un color.";
 
-
             return;
-
         }
-
 
         const sizes =
             selectedColor?.sizes ||
             selectedProduct.sizes ||
             [];
 
-
         const availableSizes =
             sizes.filter(
                 size =>
                     size.available !== false
             );
-
 
         if (
             availableSizes.length > 0 &&
@@ -1742,24 +1838,21 @@ document.addEventListener("DOMContentLoaded", async () => {
             elements.addToCartButton.disabled =
                 true;
 
-
             elements.modalStockMessage.textContent =
                 "Seleccioná un talle.";
 
-
             return;
-
         }
-
 
         elements.modalStockMessage.textContent =
             "";
-
 
         elements.addToCartButton.disabled =
             false;
 
     }
+
+
 
 
     /*
@@ -2803,25 +2896,53 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
+    /**
+     * Obtiene los colores disponibles de un producto.
+     * @param {Object} product - El producto.
+     * @returns {Array} Lista de colores disponibles.
+     */
     function getAvailableColors(product) {
 
-        if (
-            !Array.isArray(
-                product.colors
-            )
-        ) {
-
+        if (!product) {
             return [];
-
         }
 
+        const colors =
+            Array.isArray(product.apiOptions) &&
+            product.apiOptions.length > 0
+                ? product.apiOptions
+                : product.colors || [];
 
-        return product.colors.filter(
-            color =>
-                color.available !== false
+        return colors.filter(
+            color => {
+
+                if (
+                    color.available === false
+                ) {
+                    return false;
+                }
+
+                if (
+                    Array.isArray(
+                        color.sizes
+                    )
+                ) {
+
+                    return color.sizes.some(
+                        size =>
+                            size.available !== false
+                    );
+
+                }
+
+                return true;
+
+            }
         );
 
     }
+
+
 
 
     function getFirstAvailableImage(product) {
