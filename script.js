@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const API_URL = "http://localhost:8080/api/productos";
     const CATEGORIES_API_URL = "http://localhost:8080/api/categorias";
+    const VARIANTS_API_URL = "http://localhost:8080/api/variantes";
 
 
     /*
@@ -437,6 +438,33 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
     }
+
+    /*
+     * =====================================================
+     * CARGAR VARIANTES DESDE SPRING BOOT
+     * =====================================================
+     */
+
+    async function loadProductVariants(productId) {
+         try {
+             const response = await fetch(
+                 `${VARIANTS_API_URL}/producto/${productId}` 
+                ); if (!response.ok) {
+                     throw new Error(
+                         `Error HTTP: ${response.status}` 
+                        ); 
+                    } 
+                    const variants = await response.json(); 
+                    if (!Array.isArray(variants)) { 
+                        throw new Error( "La API no devolvió un array de variantes" ); 
+                    } 
+                    console.log( `Variantes del producto ${productId}:`, variants ); 
+                    return variants; 
+                } catch (error) { 
+                    console.error( `No se pudieron cargar las variantes del producto ${productId}:`, error ); 
+                    return []; 
+                } 
+            }
 
 
     /*
