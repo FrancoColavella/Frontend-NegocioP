@@ -512,23 +512,288 @@
 
 
             <button
-                class="whatsapp-button"
-                id="whatsappCheckout"
+                class="checkout-button"
+                id="checkoutButton"
             >
-
-                <svg viewBox="0 0 24 24">
-                    <path d="M20 11.5a8.5 8.5 0 0 1-12.8 7.3L3 20l1.3-4A8.5 8.5 0 1 1 20 11.5z"></path>
-                    <path d="M8.5 8.5c.2-.5.4-.5.7-.5h.5c.2 0 .4.1.5.4l.7 1.6c.1.2.1.4-.1.6l-.5.6c.8 1.2 1.5 1.8 2.8 2.5l.5-.5c.2-.2.4-.2.6-.1l1.6.7c.3.1.4.3.4.5v.5c0 .3 0 .5-.5.7-.4.2-1.5.4-2.9-.2-1.5-.6-2.7-1.6-3.7-2.8-1-1.2-1.6-2.5-1.7-3.2-.1-.7.1-1.3.1-1.8z"></path>
-                </svg>
-
-                Pedir por WhatsApp
-
+                Finalizar compra
             </button>
 
         </div>
 
     </aside>
 
+    <!-- ================= CHECKOUT ================= -->
+
+    <div
+        class="checkout-overlay"
+        id="checkoutOverlay"
+    >
+
+        <div class="checkout-modal">
+
+            <button
+                class="checkout-close"
+                id="closeCheckout"
+                type="button"
+            >
+                ×
+            </button>
+
+            <!-- FORMULARIO -->
+
+            <div id="checkoutFormView">
+
+                <div class="checkout-header">
+
+                    <span class="section-label">
+                        FINALIZAR COMPRA
+                    </span>
+
+                    <h2>
+                        Tus datos
+                    </h2>
+
+                    <p>
+                        Completá tus datos para confirmar el pedido.
+                    </p>
+
+                </div>
+
+
+                <form id="checkoutForm">
+
+                    <div class="checkout-section">
+
+                        <h3>
+                            Datos personales
+                        </h3>
+
+                        <div class="checkout-grid">
+
+                            <div class="checkout-field">
+
+                                <label for="checkoutNombre">
+                                    Nombre
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="checkoutNombre"
+                                    name="nombre"
+                                    autocomplete="given-name"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="checkout-field">
+
+                                <label for="checkoutApellido">
+                                    Apellido
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="checkoutApellido"
+                                    name="apellido"
+                                    autocomplete="family-name"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="checkout-field">
+
+                                <label for="checkoutEmail">
+                                    Email
+                                </label>
+
+                                <input
+                                    type="email"
+                                    id="checkoutEmail"
+                                    name="email"
+                                    autocomplete="email"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="checkout-field">
+
+                                <label for="checkoutTelefono">
+                                    Teléfono
+                                </label>
+
+                                <input
+                                    type="tel"
+                                    id="checkoutTelefono"
+                                    name="telefono"
+                                    autocomplete="tel"
+                                    required
+                                >
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="checkout-section">
+
+                        <h3>
+                            Datos de entrega
+                        </h3>
+
+                        <div class="checkout-grid">
+
+                            <div class="checkout-field checkout-field-full">
+
+                                <label for="checkoutDireccion">
+                                    Dirección
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="checkoutDireccion"
+                                    name="direccion"
+                                    autocomplete="street-address"
+                                    placeholder="Calle y número"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="checkout-field">
+
+                                <label for="checkoutLocalidad">
+                                    Localidad
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="checkoutLocalidad"
+                                    name="localidad"
+                                    autocomplete="address-level2"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="checkout-field">
+
+                                <label for="checkoutCodigoPostal">
+                                    Código postal
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="checkoutCodigoPostal"
+                                    name="codigoPostal"
+                                    autocomplete="postal-code"
+                                    required
+                                >
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="checkout-section">
+
+                        <h3>
+                            Resumen
+                        </h3>
+
+                        <div
+                            class="checkout-summary"
+                            id="checkoutSummary"
+                        >
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="checkout-error"
+                        id="checkoutError"
+                    ></div>
+
+
+                    <button
+                        class="checkout-submit"
+                        id="checkoutSubmit"
+                        type="submit"
+                    >
+                        Confirmar compra
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- CONFIRMACIÓN -->
+
+            <div
+                class="checkout-success"
+                id="checkoutSuccess"
+            >
+
+                <div class="checkout-success-icon">
+                    ✓
+                </div>
+
+                <span class="section-label">
+                    COMPRA CONFIRMADA
+                </span>
+
+                <h2>
+                    ¡Gracias por tu compra!
+                </h2>
+
+                <p>
+                    Tu pedido fue registrado correctamente.
+                </p>
+
+                <div class="checkout-order-number">
+
+                    <span>
+                        Número de pedido
+                    </span>
+
+                    <strong id="checkoutOrderId">
+                        #
+                    </strong>
+
+                </div>
+
+                <div
+                    class="checkout-success-total"
+                    id="checkoutSuccessTotal"
+                >
+                </div>
+
+                <button
+                    class="checkout-success-button"
+                    id="closeCheckoutSuccess"
+                    type="button"
+                >
+                    Seguir comprando
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
 
     <!-- ================= TOAST ================= -->
 

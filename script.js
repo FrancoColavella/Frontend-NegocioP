@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const API_URL = "http://localhost:8080/api/productos";
     const CATEGORIES_API_URL = "http://localhost:8080/api/categorias";
     const VARIANTS_API_URL = "http://localhost:8080/api/variantes";
+    const ORDERS_API_URL = "http://localhost:8080/api/pedidos";
 
 
     /*
@@ -108,7 +109,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         cartFooter: document.getElementById("cartFooter"),
 
         cartTotal: document.getElementById("cartTotal"),
-        whatsappCheckout: document.getElementById("whatsappCheckout"),
+        checkoutButton: document.getElementById("checkoutButton"),
+
+        checkoutOverlay: document.getElementById("checkoutOverlay"),
+        closeCheckout: document.getElementById("closeCheckout"),
+
+        checkoutForm: document.getElementById("checkoutForm"),
+        checkoutFormView: document.getElementById("checkoutFormView"),
+
+        checkoutSummary: document.getElementById("checkoutSummary"),
+        checkoutError: document.getElementById("checkoutError"),
+        checkoutSubmit: document.getElementById("checkoutSubmit"),
+
+        checkoutSuccess: document.getElementById("checkoutSuccess"),
+        checkoutOrderId: document.getElementById("checkoutOrderId"),
+        checkoutSuccessTotal: document.getElementById("checkoutSuccessTotal"),
+        closeCheckoutSuccess: document.getElementById("closeCheckoutSuccess"),
 
         continueShopping: document.getElementById("continueShopping"),
 
@@ -2374,12 +2390,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /*
-     * =====================================================
-     * WHATSAPP
-     * =====================================================
-     */
+ * =====================================================
+ * CHECKOUT
+ * =====================================================
+ */
 
-    function checkoutWhatsApp() {
+    function openCheckout() {
 
         if (cart.length === 0) {
 
@@ -2387,80 +2403,380 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "El carrito está vacío"
             );
 
-
             return;
-
         }
 
+        renderCheckoutSummary();
 
-        const phone =
-            STORE_CONFIG.store?.whatsapp;
+        elements.checkoutError.textContent = "";
 
+        elements.checkoutFormView.style.display =
+            "block";
 
-        if (!phone) {
-
-            showToast(
-                "WhatsApp todavía no está configurado"
-            );
-
-
-            return;
-
-        }
-
-
-        let message =
-            `Hola! Quiero hacer el siguiente pedido en ${STORE_CONFIG.store.name}:%0A%0A`;
-
-
-        cart.forEach(
-            (item, index) => {
-
-                message +=
-                    `${index + 1}. ${item.name}%0A`;
-
-
-                if (item.color) {
-
-                    message +=
-                        `   Color: ${item.color}%0A`;
-
-                }
-
-
-                if (item.size) {
-
-                    message +=
-                        `   Talle: ${item.size}%0A`;
-
-                }
-
-
-                message +=
-                    `   Cantidad: ${item.quantity}%0A`;
-
-
-                message +=
-                    `   Precio: ${formatPrice(item.price)}%0A%0A`;
-
-            }
+        elements.checkoutSuccess.classList.remove(
+            "visible"
         );
 
+        elements.checkoutOverlay.classList.add(
+            "open"
+        );
 
-        message +=
-            `Total: ${formatPrice(calculateCartTotal())}`;
+        document.body.classList.add(
+            "no-scroll"
+        );
+    }
 
 
-        const whatsappUrl =
-            `https://wa.me/${phone}?text=${message}`;
+    function closeCheckout() {
 
+        elements.checkoutOverlay.classList.remove(
+            "open"
+        );
 
-        window.open(
-            whatsappUrl,
-            "_blank"
+        document.body.classList.remove(
+            "no-scroll"
         );
 
     }
+
+
+    function renderCheckoutSummary() {
+
+        if (cart.length === 0) {
+
+            elements.checkoutSummary.innerHTML =
+                "<p>El carrito está vacío.</p>";
+
+            return;
+        }
+
+        elements.checkoutSummary.innerHTML =
+            cart.map(item => {
+
+                const subtotal =
+                    Number(item.price) *
+                    Number(item.quantity);
+
+                return `
+                    <div class="checkout-summary-item">
+
+                        <div>
+
+                            <strong>
+                                ${escapeHTML(item.name)}
+                            </strong>
+
+                            <span>
+                                ${
+                                    item.color
+                                        ? `Color: ${escapeHTML(item.color)}`
+                                        : ""
+                                }
+
+                                ${
+                                    item.size
+                                        ? ` · Talle: ${escapeHTML(item.size)}`
+                                        : ""
+                                }
+                            </span>
+
+                            <span>
+                                Cantidad: ${item.quantity}
+                            </span>
+
+                        </div>
+
+                        <strong>
+                            ${formatPrice(subtotal)}
+                        </strong>
+
+                    </div>
+                `;
+
+            }).join("") +
+
+            `
+                <div class="checkout-summary-total">
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong>
+                        ${formatPrice(calculateCartTotal())}
+                    </strong>
+
+                </div>
+            `;
+    }
+
+
+    async function submitOrder(event) {
+
+        event.preventDefault();
+
+        if (cart.length === 0) {
+
+            showCheckoutError(
+                "El carrito está vacío."
+            );
+
+            return;
+        }
+
+        const formData =
+            new FormData(
+                elements.checkoutForm
+            );
+
+        const nombre =
+            String(
+                formData.get("nombre") || ""
+            ).trim();
+
+        const apellido =
+            String(
+                formData.get("apellido") || ""
+            ).trim();
+
+        const email =
+            String(
+                formData.get("email") || ""
+            ).trim();
+
+        const telefono =
+            String(
+                formData.get("telefono") || ""
+            ).trim();
+
+        const direccion =
+            String(
+                formData.get("direccion") || ""
+            ).trim();
+
+        const localidad =
+            String(
+                formData.get("localidad") || ""
+            ).trim();
+
+        const codigoPostal =
+            String(
+                formData.get("codigoPostal") || ""
+            ).trim();
+
+
+        if (
+            !nombre ||
+            !apellido ||
+            !email ||
+            !telefono ||
+            !direccion ||
+            !localidad ||
+            !codigoPostal
+        ) {
+
+            showCheckoutError(
+                "Completá todos los campos obligatorios."
+            );
+
+            return;
+        }
+
+
+        /*
+        * El frontend solamente envía:
+        *
+        * - variante
+        * - cantidad
+        *
+        * El backend será responsable
+        * de obtener producto y precio.
+        */
+
+        const detalles =
+            cart.map(item => ({
+
+                variante: {
+                    id: Number(item.variantId)
+                },
+
+                cantidad:
+                    Number(item.quantity)
+
+            }));
+
+
+        if (
+            detalles.some(
+                detalle =>
+                    !detalle.variante.id ||
+                    detalle.cantidad <= 0
+            )
+        ) {
+
+            showCheckoutError(
+                "Hay un producto del carrito que ya no es válido. Actualizá la página e intentá nuevamente."
+            );
+
+            return;
+        }
+
+
+        const pedido = {
+
+            nombreCliente:
+                nombre,
+
+            apellidoCliente:
+                apellido,
+
+            emailCliente:
+                email,
+
+            telefonoCliente:
+                telefono,
+
+            direccionEntrega:
+                direccion,
+
+            localidadEntrega:
+                localidad,
+
+            codigoPostalEntrega:
+                codigoPostal,
+
+            costoEnvio:
+                0,
+
+            detalles:
+                detalles
+
+        };
+
+
+        setCheckoutLoading(true);
+
+        try {
+
+            const response =
+                await fetch(
+                    ORDERS_API_URL,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                pedido
+                            )
+                    }
+                );
+
+
+            const data =
+                await response.json()
+                    .catch(
+                        () => ({})
+                    );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "No se pudo crear el pedido."
+                );
+            }
+
+
+            /*
+            * IMPORTANTE:
+            *
+            * Solamente vaciamos el carrito
+            * después de recibir 201 Created.
+            */
+
+            cart = [];
+
+            saveCart();
+
+            updateCartUI();
+
+
+            elements.checkoutForm.reset();
+
+            elements.checkoutFormView.style.display =
+                "none";
+
+            elements.checkoutSuccess.classList.add(
+                "visible"
+            );
+
+
+            elements.checkoutOrderId.textContent =
+                `#${data.id}`;
+
+
+            elements.checkoutSuccessTotal.textContent =
+                `Total: ${formatPrice(data.total)}`;
+
+
+        } catch (error) {
+
+            console.error(
+                "Error al crear pedido:",
+                error
+            );
+
+
+            showCheckoutError(
+                error.message ||
+                "No se pudo completar la compra."
+            );
+
+        } finally {
+
+            setCheckoutLoading(false);
+
+        }
+
+    }
+
+
+    function showCheckoutError(message) {
+
+        elements.checkoutError.textContent =
+            message;
+
+        elements.checkoutError.classList.add(
+            "visible"
+        );
+
+    }
+
+
+    function setCheckoutLoading(loading) {
+
+        elements.checkoutSubmit.disabled =
+            loading;
+
+        if (loading) {
+
+            elements.checkoutSubmit.textContent =
+                "Procesando compra...";
+
+        } else {
+
+            elements.checkoutSubmit.textContent =
+                "Confirmar compra";
+
+        }
+
+}
 
 
     /*
@@ -2818,12 +3134,41 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         /*
-         * WhatsApp
+         * Compra
          */
 
-        elements.whatsappCheckout.addEventListener(
+        elements.checkoutButton.addEventListener(
             "click",
-            checkoutWhatsApp
+            openCheckout
+        );
+
+        elements.closeCheckout.addEventListener(
+            "click",
+            closeCheckout
+        );
+
+        elements.closeCheckoutSuccess.addEventListener(
+            "click",
+            closeCheckout
+        );
+
+        elements.checkoutOverlay.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    event.target ===
+                    elements.checkoutOverlay
+                ) {
+                    closeCheckout();
+                }
+
+            }
+        );
+
+        elements.checkoutForm.addEventListener(
+            "submit",
+            submitOrder
         );
 
 
