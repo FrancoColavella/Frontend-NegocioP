@@ -1899,7 +1899,7 @@ document.addEventListener("DOMContentLoaded", async () => {
      * CARRITO
      * =====================================================
      */
-    
+
     function addToCart() {
 
         if (!selectedProduct) {
@@ -1911,16 +1911,36 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         if (!selectedVariant) {
-            alert("La variante seleccionada no está disponible.");
+            alert(
+                "La variante seleccionada no está disponible."
+            );
             return;
         }
 
-        const stock = Number(selectedVariant.stock) || 0;
+        const stock =
+            Number(selectedVariant.stock) || 0;
 
         if (stock <= 0) {
-            alert("Esta variante no tiene stock disponible.");
+            alert(
+                "Esta variante no tiene stock disponible."
+            );
             return;
         }
+
+        /*
+        * Guardamos estos datos antes de cerrar
+        * el modal porque closeProductModal()
+        * limpia selectedProduct, selectedColor
+        * y selectedSize.
+        */
+        const productName =
+            selectedProduct.name;
+
+        const productId =
+            selectedProduct.id;
+
+        const productPrice =
+            selectedProduct.price;
 
         const colorName =
             selectedColor.name;
@@ -1928,18 +1948,48 @@ document.addEventListener("DOMContentLoaded", async () => {
         const sizeName =
             selectedSize.name;
 
+        const variantId =
+            selectedVariant.id;
+
+        const selectedColorData =
+            selectedProduct.colors?.find(
+                color => color.name === colorName
+            );
+
+        const productImage =
+            selectedColorData?.image ||
+            selectedProduct.image ||
+            "";
+
+        /*
+        * Cada variante tiene su propio cartId.
+        *
+        * Ejemplo:
+        * Producto 1 + variante 4
+        * Producto 1 + variante 6
+        *
+        * Son dos elementos diferentes del carrito.
+        */
         const cartId =
-            `${selectedProduct.id}-${selectedVariant.id}`;
+            `${productId}-${variantId}`;
 
         const existingItem =
-            cart.find(item => item.cartId === cartId);
+            cart.find(
+                item =>
+                    item.cartId === cartId
+            );
 
         if (existingItem) {
 
-            if (existingItem.quantity >= stock) {
+            if (
+                existingItem.quantity >=
+                stock
+            ) {
+
                 alert(
                     `No hay más stock disponible. Stock máximo: ${stock}`
                 );
+
                 return;
             }
 
@@ -1948,43 +1998,65 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
 
             cart.push({
-                cartId: cartId,
+
+                cartId:
+
+                    cartId,
 
                 productId:
-                    selectedProduct.id,
+
+                    productId,
 
                 variantId:
-                    selectedVariant.id,
+
+                    variantId,
 
                 name:
-                    selectedProduct.name,
+
+                    productName,
 
                 price:
-                    selectedProduct.price,
+
+                    productPrice,
 
                 color:
+
                     colorName,
 
                 size:
+
                     sizeName,
 
                 image:
-                    selectedProduct.image,
+
+                    productImage,
 
                 quantity: 1
+
             });
+
         }
 
         saveCart();
 
         updateCartUI();
 
+        /*
+        * Guardamos el mensaje antes de cerrar
+        * el modal para evitar depender de
+        * selectedProduct después.
+        */
+        const toastMessage =
+            `${productName} agregado al carrito`;
+
         closeProductModal();
 
         showToast(
-            `${selectedProduct.name} agregado al carrito`
+            toastMessage
         );
     }
+
+
 
 
 
