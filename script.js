@@ -2224,7 +2224,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    function changeQuantity(
+    async function changeQuantity(
         cartId,
         amount
     ) {
@@ -2235,31 +2235,106 @@ document.addEventListener("DOMContentLoaded", async () => {
                     item.cartId === cartId
             );
 
-
         if (!item) {
+            return;
+        }
+
+        /*
+        * Si estamos disminuyendo,
+        * no necesitamos consultar la API.
+        */
+        if (amount < 0) {
+
+            item.quantity += amount;
+
+            if (item.quantity <= 0) {
+
+                cart =
+                    cart.filter(
+                        cartItem =>
+                            cartItem.cartId !== cartId
+                    );
+
+            }
+
+            saveCart();
+
+            updateCartUI();
 
             return;
-
         }
 
+        /*
+        * Si estamos aumentando,
+        * necesitamos comprobar el stock real
+        * de la variante en el backend.
+        */
+        if (!item.variantId) {
 
-        item.quantity += amount;
+            console.warn(
+                "El producto no tiene variantId:",
+                item
+            );
 
+            return;
+        }
 
-        if (item.quantity <= 0) {
+        try {
 
-            cart =
-                cart.filter(
-                    item =>
-                        item.cartId !== cartId
+            const response =
+                await fetch(
+                    `${VARIANTS_API_URL}/${item.variantId}`
                 );
 
+            if (!response.ok) {
+
+                throw new Error(
+                    `Error HTTP: ${response.status}`
+                );
+
+            }
+
+            const variant =
+                await response.json();
+
+            const stock =
+                Number(variant.stock) || 0;
+
+            /*
+            * La cantidad que ya tenemos
+            * en el carrito no puede superar
+            * el stock real.
+            */
+            if (item.quantity >= stock) {
+
+                alert(
+                    `No hay más stock disponible. Stock actual: ${stock}`
+                );
+
+                return;
+            }
+
+            /*
+            * Hay stock suficiente.
+            */
+            item.quantity += amount;
+
+            saveCart();
+
+            updateCartUI();
+
+        } catch (error) {
+
+            console.error(
+                "No se pudo verificar el stock:",
+                error
+            );
+
+            alert(
+                "No se pudo verificar el stock. Intentá nuevamente."
+            );
+
         }
-
-
-        saveCart();
-
-        updateCartUI();
 
     }
 
