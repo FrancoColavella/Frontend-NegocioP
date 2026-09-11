@@ -38,6 +38,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     let selectedColor = null;
     let selectedSize = null;
 
+    let selectedVariant = null;
+    let productVariants = [];
+
 
     /*
      * =====================================================
@@ -446,25 +449,111 @@ document.addEventListener("DOMContentLoaded", async () => {
      */
 
     async function loadProductVariants(productId) {
-         try {
-             const response = await fetch(
-                 `${VARIANTS_API_URL}/producto/${productId}` 
-                ); if (!response.ok) {
-                     throw new Error(
-                         `Error HTTP: ${response.status}` 
-                        ); 
-                    } 
-                    const variants = await response.json(); 
-                    if (!Array.isArray(variants)) { 
-                        throw new Error( "La API no devolvió un array de variantes" ); 
-                    } 
-                    console.log( `Variantes del producto ${productId}:`, variants ); 
-                    return variants; 
-                } catch (error) { 
-                    console.error( `No se pudieron cargar las variantes del producto ${productId}:`, error ); 
-                    return []; 
-                } 
+
+        try {
+
+            console.log(
+                `Consultando variantes del producto ${productId} en:`,
+                `${VARIANTS_API_URL}/producto/${productId}`
+            );
+
+            const response =
+                await fetch(
+                    `${VARIANTS_API_URL}/producto/${productId}`
+            );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `Error HTTP: ${response.status}`
+                );
+
             }
+
+            const variants =
+                await response.json();
+
+            if (!Array.isArray(variants)) {
+
+                throw new Error(
+                    "La API no devolvió un array de variantes"
+                );
+
+            }
+
+            console.log(
+                `Variantes del producto ${productId}:`,
+                variants
+            );
+
+            return variants;
+
+        } catch (error) {
+
+            console.error(
+                `No se pudieron cargar las variantes del producto ${productId}:`,
+                error
+            );
+
+            return [];
+
+        }
+
+    }
+
+
+    function buildProductOptionsFromVariants(variants) {
+
+        const colorsMap = new Map();
+
+        variants.forEach(variant => {
+
+            const color = variant.color;
+            const talle = variant.talle;
+
+            if (!color || !talle) {
+                return;
+            }
+
+            if (!colorsMap.has(color.id)) {
+
+                colorsMap.set(color.id, {
+                    id: color.id,
+                    name: color.nombre,
+                    hex: color.codigoHex,
+                    sizes: []
+                });
+
+            }
+
+            const currentColor =
+                colorsMap.get(color.id);
+
+            const existingSize =
+                currentColor.sizes.find(
+                    size => size.id === talle.id
+                );
+
+            if (!existingSize) {
+
+                currentColor.sizes.push({
+                    id: talle.id,
+                    name: talle.nombre,
+                    variantId: variant.id,
+                    stock: variant.stock
+                });
+
+            }
+
+        });
+
+        return Array.from(colorsMap.values());
+
+    }
+
+
+
+
 
 
     /*
@@ -1036,7 +1125,7 @@ document.addEventListener("DOMContentLoaded", async () => {
      * =====================================================
      */
 
-    function openProductModal(product) {
+    async function openProductModal(product) {
 
         selectedProduct =
             product;
@@ -1048,6 +1137,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         selectedSize =
             null;
+
+        selectedVariant = null;
+
+        productVariants = await loadProductVariants(product.id);
+
+        const apiOptions =
+            buildProductOptionsFromVariants(productVariants);
+        
+        if (apiOptions.length > 0) {
+            product.apiOptions = apiOptions;
+        }
+
+        console.log(
+            "Opciones construidas desde variantes:",
+            apiOptions
+        );
 
 
         elements.modalProductCategory.textContent =
