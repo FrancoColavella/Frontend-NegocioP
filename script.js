@@ -1899,71 +1899,68 @@ document.addEventListener("DOMContentLoaded", async () => {
      * CARRITO
      * =====================================================
      */
-
+    
     function addToCart() {
 
         if (!selectedProduct) {
-
             return;
-
         }
 
-
-        if (
-            elements.addToCartButton.disabled
-        ) {
-
+        if (!selectedColor || !selectedSize) {
             return;
-
         }
 
+        if (!selectedVariant) {
+            alert("La variante seleccionada no está disponible.");
+            return;
+        }
+
+        const stock = Number(selectedVariant.stock) || 0;
+
+        if (stock <= 0) {
+            alert("Esta variante no tiene stock disponible.");
+            return;
+        }
 
         const colorName =
-            selectedColor?.name || "";
-
+            selectedColor.name;
 
         const sizeName =
-            selectedSize?.name || "";
-
-
-        const image =
-            selectedColor?.image ||
-            getFirstAvailableImage(
-                selectedProduct
-            );
-
+            selectedSize.name;
 
         const cartId =
-            `${selectedProduct.id}-${colorName}-${sizeName}`;
-
+            `${selectedProduct.id}-${selectedVariant.id}`;
 
         const existingItem =
-            cart.find(
-                item =>
-                    item.cartId === cartId
-            );
-
+            cart.find(item => item.cartId === cartId);
 
         if (existingItem) {
 
-            existingItem.quantity += 1;
+            if (existingItem.quantity >= stock) {
+                alert(
+                    `No hay más stock disponible. Stock máximo: ${stock}`
+                );
+                return;
+            }
+
+            existingItem.quantity++;
 
         } else {
 
             cart.push({
-
-                cartId,
+                cartId: cartId,
 
                 productId:
                     selectedProduct.id,
+
+                variantId:
+                    selectedVariant.id,
 
                 name:
                     selectedProduct.name,
 
                 price:
-                    Number(
-                        selectedProduct.price
-                    ) || 0,
+                    selectedProduct.price,
 
                 color:
                     colorName,
@@ -1971,30 +1968,25 @@ document.addEventListener("DOMContentLoaded", async () => {
                 size:
                     sizeName,
 
-                image,
+                image:
+                    selectedProduct.image,
 
                 quantity: 1
-
             });
-
         }
-
 
         saveCart();
 
         updateCartUI();
 
+        closeProductModal();
 
         showToast(
             `${selectedProduct.name} agregado al carrito`
         );
-
-
-        closeProductModal();
-
-        openCart();
-
     }
+
+
 
 
     function updateCartUI() {
