@@ -975,27 +975,128 @@ img {
     justify-content: center;
 }
 
+/* =========================================================
+   PRODUCT MODAL - GALERÍA
+========================================================= */
+
 .modal-product-image {
+    width: 100%;
+    height: 550px;
     min-height: 550px;
+    max-height: 550px;
 
     background: #ededeb;
 
     overflow: hidden;
 
     border-radius: var(--radius-large) 0 0 var(--radius-large);
+
+    display: flex;
+    flex-direction: column;
 }
 
-.modal-product-image img {
+/* Imagen principal */
+
+.modal-main-image {
+    width: 100%;
+    height: 470px;
+    min-height: 470px;
+    max-height: 470px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    flex-shrink: 0;
+}
+
+.modal-main-image img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+
+    display: block;
+
+    transition: opacity 0.2s ease;
+}
+
+.modal-main-image img.changing {
+    opacity: 0.2;
+}
+
+/* =========================================================
+   MINIATURAS
+========================================================= */
+
+.modal-image-thumbnails {
+    width: 100%;
+
+    height: 80px;
+    min-height: 80px;
+    max-height: 80px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 8px 12px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    background: rgba(255, 255, 255, 0.94);
+
+    scrollbar-width: thin;
+
+    box-sizing: border-box;
+
+    flex-shrink: 0;
+}
+
+.modal-image-thumbnail {
+    flex: 0 0 70px;
+
+    width: 70px;
+    height: 64px;
+
+    padding: 0;
+
+    border: 2px solid transparent;
+
+    border-radius: 8px;
+
+    background: #f3f3f3;
+
+    overflow: hidden;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.2s ease,
+        transform 0.2s ease;
+
+    box-sizing: border-box;
+}
+
+.modal-image-thumbnail:hover {
+    transform: translateY(-2px);
+}
+
+.modal-image-thumbnail.selected {
+    border-color: #111;
+}
+
+.modal-image-thumbnail img {
     width: 100%;
     height: 100%;
 
     object-fit: cover;
 
-    transition: opacity 0.2s ease;
-}
-
-.modal-product-image img.changing {
-    opacity: 0.2;
+    display: block;
 }
 
 .modal-product-info {
@@ -1822,94 +1923,6 @@ img {
     }
 }
 
-/* =========================================================
-   GALERÍA DE IMÁGENES DEL PRODUCTO
-========================================================= */
-
-.modal-product-image {
-    min-height: 550px;
-    background: #ededeb;
-    overflow: hidden;
-    border-radius: var(--radius-large) 0 0 var(--radius-large);
-
-    display: flex;
-    flex-direction: column;
-}
-
-.modal-main-image {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
-
-.modal-main-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: opacity 0.2s ease;
-}
-
-.modal-main-image img.changing {
-    opacity: 0.2;
-}
-
-/* Miniaturas */
-
-.modal-image-thumbnails {
-    display: flex;
-    gap: 10px;
-
-    padding: 12px;
-
-    overflow-x: auto;
-    overflow-y: hidden;
-
-    background: rgba(255, 255, 255, 0.94);
-
-    scrollbar-width: thin;
-}
-
-.modal-image-thumbnail {
-    flex: 0 0 70px;
-
-    width: 70px;
-    height: 80px;
-
-    padding: 0;
-
-    border: 2px solid transparent;
-    border-radius: 8px;
-
-    background: #f3f3f3;
-
-    overflow: hidden;
-
-    cursor: pointer;
-
-    transition:
-        border-color 0.2s ease,
-        transform 0.2s ease;
-}
-
-.modal-image-thumbnail:hover {
-    transform: translateY(-2px);
-}
-
-.modal-image-thumbnail.selected {
-    border-color: #111;
-}
-
-.modal-image-thumbnail img {
-    width: 100%;
-    height: 100%;
-
-    object-fit: cover;
-
-    display: block;
-}
 
 /* =========================================================
    CHECKOUT
@@ -2366,6 +2379,47 @@ img {
         flex-basis: 60px;
         width: 60px;
         height: 70px;
+    }
+
+    /* =========================================================
+    PRODUCT MODAL - MOBILE
+    ========================================================= */
+
+    .modal-product-image {
+        width: 100%;
+
+        height: 420px;
+        min-height: 420px;
+        max-height: 420px;
+
+        border-radius:
+            var(--radius-large)
+            var(--radius-large)
+            0
+            0;
+    }
+
+    .modal-main-image {
+        width: 100%;
+
+        height: 340px;
+        min-height: 340px;
+        max-height: 340px;
+    }
+
+    .modal-image-thumbnails {
+        height: 80px;
+        min-height: 80px;
+        max-height: 80px;
+
+        padding: 8px 10px;
+    }
+
+    .modal-image-thumbnail {
+        flex: 0 0 60px;
+
+        width: 60px;
+        height: 64px;
     }
 
 }
