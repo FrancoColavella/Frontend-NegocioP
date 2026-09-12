@@ -41,6 +41,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let selectedVariant = null;
     let productVariants = [];
+    let productImages = [];
 
 
     /*
@@ -80,6 +81,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         closeProductModal: document.getElementById("closeProductModal"),
 
         modalProductImage: document.getElementById("modalProductImage"),
+        modalImageThumbnails: document.getElementById("modalImageThumbnails"),
         modalProductCategory: document.getElementById("modalProductCategory"),
         modalProductName: document.getElementById("modalProductName"),
         modalProductPrice: document.getElementById("modalProductPrice"),
@@ -514,6 +516,145 @@ document.addEventListener("DOMContentLoaded", async () => {
             return [];
 
         }
+
+    }
+
+    async function loadProductImages(productId) {
+
+        try {
+
+            console.log(
+                `Consultando imágenes del producto ${productId}:`,
+                `http://localhost:8080/api/productos/${productId}/imagenes`
+            );
+
+            const response = await fetch(
+                `http://localhost:8080/api/productos/${productId}/imagenes`
+            );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `Error HTTP: ${response.status}`
+                );
+
+            }
+
+            const images = await response.json();
+
+            if (!Array.isArray(images)) {
+
+                throw new Error(
+                    "La API no devolvió un array de imágenes"
+                );
+
+            }
+
+            console.log(
+                `Imágenes del producto ${productId}:`,
+                images
+            );
+
+            return images;
+
+        } catch (error) {
+
+            console.error(
+                `No se pudieron cargar las imágenes del producto ${productId}:`,
+                error
+            );
+
+            return [];
+
+        }
+
+    }
+
+    function renderModalImageGallery(images) {
+
+        const container =
+            elements.modalImageThumbnails;
+
+        if (!container) {
+            return;
+        }
+
+        container.innerHTML = "";
+
+        if (!images || images.length === 0) {
+
+            container.style.display = "none";
+
+            return;
+        }
+
+        container.style.display = "flex";
+
+        const orderedImages =
+            [...images].sort(
+                (a, b) =>
+                    Number(a.orden || 0) -
+                    Number(b.orden || 0)
+            );
+
+        orderedImages.forEach(
+            (image, index) => {
+
+                const button =
+                    document.createElement("button");
+
+                button.type = "button";
+
+                button.className =
+                    "modal-image-thumbnail";
+
+                if (index === 0) {
+
+                    button.classList.add(
+                        "selected"
+                    );
+
+                }
+
+                button.innerHTML = `
+                    <img
+                        src="${escapeAttribute(image.url)}"
+                        alt="Imagen ${index + 1}"
+                    >
+                `;
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        document
+                            .querySelectorAll(
+                                ".modal-image-thumbnail"
+                            )
+                            .forEach(
+                                thumbnail =>
+                                    thumbnail.classList.remove(
+                                        "selected"
+                                    )
+                            );
+
+                        button.classList.add(
+                            "selected"
+                        );
+
+                        changeModalImage(
+                            image.url
+                        );
+
+                    }
+                );
+
+                container.appendChild(
+                    button
+                );
+
+            }
+        );
 
     }
 
@@ -1159,10 +1300,30 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const apiOptions =
             buildProductOptionsFromVariants(productVariants);
-        
+
         if (apiOptions.length > 0) {
-            product.apiOptions = apiOptions;
+
+            apiOptions.forEach(color => {
+
+                color.images =
+                    productImages.filter(
+                        image =>
+                            Number(image.color?.id) ===
+                            Number(color.id)
+                    );
+
+            });
+
+            product.apiOptions =
+                apiOptions;
+
+            product.colors =
+                apiOptions;
+
         }
+
+        productImages =
+            await loadProductImages(product.id);
 
         console.log(
             "Opciones construidas desde variantes:",
@@ -1444,33 +1605,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const colors =
-            Array.isArray(selectedProduct.apiOptions) &&
-            selectedProduct.apiOptions.length > 0
-                ? selectedProduct.apiOptions
-                : selectedProduct.colors || [];
-
         const color =
-            colors.find(
+            selectedProduct.colors.find(
                 item =>
                     item.name === colorName
             );
 
-        if (!color) {
-            return;
-        }
-
         if (
+            !color ||
             color.available === false
-        ) {
-            return;
-        }
-
-        if (
-            Array.isArray(color.sizes) &&
-            !color.sizes.some(
-                size => size.available !== false
-            )
         ) {
             return;
         }
@@ -1481,22 +1624,32 @@ document.addEventListener("DOMContentLoaded", async () => {
         selectedSize =
             null;
 
-        selectedVariant =
-            null;
+        const colorImages =
+            productImages
+                .filter(
+                    image =>
+                        Number(image.color?.id) ===
+                        Number(color.id)
+                )
+                .sort(
+                    (a, b) =>
+                        Number(a.orden || 0) -
+                        Number(b.orden || 0)
+                );
 
-    /*
-     * Si estamos utilizando los datos
-     * reales de la API, el color no
-     * necesariamente tiene imagen.
-     *
-     * Por eso solamente cambiamos
-     * la imagen si existe.
-     */
-        if (color.image) {
+        if (colorImages.length > 0) {
 
             changeModalImage(
-                color.image
+                colorImages[0].url
             );
+
+            renderModalImageGallery(
+                colorImages
+            );
+
+        } else {
+
+            renderModalImageGallery([]);
 
         }
 
